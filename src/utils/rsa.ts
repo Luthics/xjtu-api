@@ -1,16 +1,21 @@
 import NodeRSA from 'node-rsa';
-import { readFileSync } from 'fs';
-import { join, dirname } from 'path';
-import { fileURLToPath } from 'url';
 
-const __dirname = dirname(fileURLToPath(import.meta.url));
+// 西安交通大学统一身份认证公钥
+const XJTU_PUBLIC_KEY = `-----BEGIN PUBLIC KEY-----
+MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA2u2v/bjSIVsaxCBBxkjW
+f7LpmsjuhFJUJE7MYTn9hBcDXlK4smgtNoMqmGz4ztg5t1h+h0fqrJT3WkdoLV/F
+KC8OwElTe+p+YLqA6/PgmGtsffcQmAW0eye5NygiWM+B0tO69ML6jNLpAWAvXwod
+5kr/k7qsM1DGTux+e7bjdFz/IA8vOZx3IlGHnX+RE/uBJUwPXHnLPw5pQSwkWwfp
+PwxMrgzwik6htqRHF2c7Z+pJToXbrIJWD5nmRiU6jzgu8ncLqbMb3WNOKSodcEnl
+UpTH/ApH56IOJHWpq3mxJL9DaUaWzjziR93wjlyvR1K4VM7TLqD35CVZQaoE5FWg
+ZwIDAQAB
+-----END PUBLIC KEY-----`;
 
 let _pubkeyCache: string | null = null;
 
 function getPubkey(refresh: boolean = false): string {
   if (_pubkeyCache === null || refresh) {
-    const keyPath = join(__dirname, '../assets/keys/token_1028.key');
-    _pubkeyCache = readFileSync(keyPath, 'utf-8');
+    _pubkeyCache = XJTU_PUBLIC_KEY;
   }
   return _pubkeyCache;
 }
