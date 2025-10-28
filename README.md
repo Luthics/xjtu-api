@@ -1,5 +1,7 @@
 # XJTU API
 
+[![Telegram](https://img.shields.io/badge/Telegram-%40xjtu__api-blue?logo=telegram)](https://t.me/xjtu_api)
+
 西安交通大学 API 封装库，提供统一身份认证、MFA 多因素认证、用户信息获取等功能。
 
 ## 特性

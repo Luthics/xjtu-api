@@ -1,5 +1,7 @@
 import axios, { AxiosInstance } from 'axios';
-import { Course, Score, ClassroomStatus, ApiResponse } from '../types/index.js';
+import { ApiResponse } from '../types/core/index.js';
+import { Course, Score, ClassroomStatus } from '../types/api/ehall.xjtu.edu.cn/index.js';
+import { RollResponse, RollGroup } from '../types/api/ehall.xjtu.edu.cn/appMultiGroupEntranceList.js';
 
 export class EHallService {
   private session: AxiosInstance;
@@ -37,23 +39,23 @@ export class EHallService {
     return this.session;
   }
 
-  private async getRolls(appId: string): Promise<unknown> {
+  private async getRolls(appId: string): Promise<RollResponse> {
     const t = Date.now();
     const url = `https://ehall.xjtu.edu.cn/appMultiGroupEntranceList?r_t=${t}&appId=${appId}&param=`;
-    const response = await this.session.get(url);
+    const response = await this.session.get<RollResponse>(url);
     return response.data;
   }
 
   private async getTargetUrl(appId: string, keyword: string = '学生'): Promise<string> {
     const rolls = await this.getRolls(appId);
-    const groupList = rolls.data.groupList;
-    
+    const groupList: RollGroup[] = rolls.data.groupList;
+
     for (const roll of groupList) {
       if (roll.groupName.includes(keyword)) {
         return roll.targetUrl;
       }
     }
-    
+
     throw new Error(`未找到包含关键词"${keyword}"的目标URL`);
   }
 

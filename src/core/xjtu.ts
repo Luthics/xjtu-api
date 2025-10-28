@@ -5,7 +5,7 @@ import {
   UserInfo,
   MFADetection,
   MFAGid
-} from '../types/index.js';
+} from '../types/core/index.js';
 import { EHallService } from '../services/ehall.js';
 import { WebVPNService } from '../services/webvpn.js';
 import { rsaEncryptWithHeader } from '../utils/rsa.js';

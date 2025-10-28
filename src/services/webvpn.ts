@@ -1,5 +1,5 @@
 import axios, { AxiosInstance } from 'axios';
-import { WebVPNTicket } from '../types/index.js';
+import { WebVPNTicket } from '../types/api/webvpn.xjtu.edu.cn/index.js';
 
 export class WebVPNService {
   private session: AxiosInstance;
