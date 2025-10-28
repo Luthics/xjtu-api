@@ -47,5 +47,8 @@ ref
 # TypeScript
 *.tsbuildinfo
 
+# Documentation (auto-generated)
+docs/
+
 .claude
 .ds.sh

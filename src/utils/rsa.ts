@@ -1,6 +1,9 @@
 import NodeRSA from 'node-rsa';
 
-// 西安交通大学统一身份认证公钥
+/**
+ * 西安交通大学统一身份认证公钥
+ * 用于加密登录凭据的 RSA 公钥
+ */
 const XJTU_PUBLIC_KEY = `-----BEGIN PUBLIC KEY-----
 MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA2u2v/bjSIVsaxCBBxkjW
 f7LpmsjuhFJUJE7MYTn9hBcDXlK4smgtNoMqmGz4ztg5t1h+h0fqrJT3WkdoLV/F
@@ -13,6 +16,12 @@ ZwIDAQAB
 
 let _pubkeyCache: string | null = null;
 
+/**
+ * 获取公钥，支持缓存机制
+ *
+ * @param refresh - 是否强制刷新缓存
+ * @returns 公钥字符串
+ */
 function getPubkey(refresh: boolean = false): string {
   if (_pubkeyCache === null || refresh) {
     _pubkeyCache = XJTU_PUBLIC_KEY;
@@ -21,10 +30,17 @@ function getPubkey(refresh: boolean = false): string {
 }
 
 /**
- * 使用给定的 PEM 公钥对 data 加密，返回形如 '__RSA__<base64密文>' 的字符串。
- * @param data 待加密数据（string）
- * @param pubkeyPem 公钥（PKCS#1 或 PKCS#8 PEM 均可）
- * @param header 前缀，默认 '__RSA__'
+ * 使用 RSA 公钥加密数据并添加前缀
+ *
+ * @param data - 待加密数据
+ * @param pubkeyPem - 公钥（PKCS#1 或 PKCS#8 PEM 均可），默认使用西安交通大学公钥
+ * @param header - 加密结果前缀，默认 '__RSA__'
+ * @returns 形如 '__RSA__<base64密文>' 的加密字符串
+ * @example
+ * ```typescript
+ * const encrypted = rsaEncryptWithHeader('password123');
+ * // 返回: '__RSA__base64_encoded_ciphertext'
+ * ```
  */
 export function rsaEncryptWithHeader(
   data: string,

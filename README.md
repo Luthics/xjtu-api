@@ -9,6 +9,7 @@
 ## 特性
 
 - ✅ 统一身份认证登录
+- ✅ Token 登录支持（支持直接使用 idToken 和 refreshToken）
 - ✅ MFA 多因素认证支持
 - ✅ 用户信息获取
 - ✅ EHall 教务系统集成
@@ -55,6 +56,41 @@ async function basicLogin() {
   } catch (error) {
     console.error('登录失败:', error);
   }
+}
+```
+
+### Token 登录
+
+如果您已经拥有有效的 idToken，可以直接使用 token 登录：
+
+```typescript
+import { XJTU } from 'xjtu-api';
+
+async function tokenLogin() {
+  // 使用 idToken 和 refreshToken 登录
+  const xjtu = new XJTU({
+    idToken: 'your_id_token',
+    refreshToken: 'your_refresh_token' // 可选
+  });
+
+  // 直接获取用户信息，无需重新登录
+  const userInfo = await xjtu.getUserInfo();
+  console.log('用户信息:', userInfo);
+
+  // 获取当前 token
+  console.log('当前 idToken:', xjtu.getIdToken());
+}
+
+// 或者使用 setTokens 方法动态设置 token
+async function setTokensExample() {
+  const xjtu = new XJTU();
+
+  // 动态设置 token
+  xjtu.setTokens('new_id_token', 'new_refresh_token');
+
+  // 现在可以使用服务
+  const userInfo = await xjtu.getUserInfo();
+  console.log('用户信息:', userInfo);
 }
 ```
 
@@ -124,16 +160,33 @@ function getUserInput(prompt: string): Promise<string> {
 #### 构造函数
 
 ```typescript
-new XJTU(credentials?: LoginCredentials)
+new XJTU(credentials?: LoginCredentials | TokenCredentials)
 ```
 
 **参数:**
-- `credentials` (可选): 登录凭据
-  - `netid` (string): 学号
-  - `password` (string): 密码
-  - `userAgent` (string, 可选): 用户代理
-  - `deviceId` (string, 可选): 设备ID
-  - `clientId` (string, 可选): 客户端ID
+- `credentials` (可选): 登录凭据，支持两种方式：
+
+**方式一：账号密码登录**
+```typescript
+{
+  netid: string;        // 学号
+  password: string;     // 密码
+  userAgent?: string;   // 用户代理
+  deviceId?: string;    // 设备ID
+  clientId?: string;    // 客户端ID
+}
+```
+
+**方式二：Token 登录**
+```typescript
+{
+  idToken: string;      // 身份令牌
+  refreshToken?: string; // 刷新令牌（可选）
+  userAgent?: string;   // 用户代理
+  deviceId?: string;    // 设备ID
+  clientId?: string;    // 客户端ID
+}
+```
 
 #### 方法
 
@@ -249,12 +302,38 @@ useWebVPN(): WebVPNService
 getIdToken(): string
 ```
 
+##### setTokens
+设置身份令牌和刷新令牌
+
+```typescript
+setTokens(idToken: string, refreshToken?: string): void
+```
+
+**参数:**
+- `idToken` (string): 身份令牌
+- `refreshToken` (string, 可选): 刷新令牌
+
+##### getRefreshToken
+获取当前刷新令牌
+
+```typescript
+getRefreshToken(): string
+```
+
 ## 类型定义
 
 ```typescript
 interface LoginCredentials {
   netid: string;
   password: string;
+  userAgent?: string;
+  deviceId?: string;
+  clientId?: string;
+}
+
+interface TokenCredentials {
+  idToken: string;
+  refreshToken?: string;
   userAgent?: string;
   deviceId?: string;
   clientId?: string;

@@ -1,6 +1,15 @@
 import axios, { AxiosInstance } from 'axios';
 import { WebVPNTicket } from '../types/api/webvpn.xjtu.edu.cn/index.js';
 
+/**
+ * WebVPN 服务类，提供西安交通大学 WebVPN 功能访问
+ *
+ * @example
+ * ```typescript
+ * const webvpn = xjtu.useWebVPN();
+ * const ticket = await webvpn.getTicket();
+ * ```
+ */
 export class WebVPNService {
   private session: AxiosInstance;
   private userAgent: string;
@@ -8,6 +17,11 @@ export class WebVPNService {
   private ticketTime?: number;
   private idToken?: string;
 
+  /**
+   * 创建 WebVPNService 实例
+   *
+   * @param userAgent - 用户代理字符串
+   */
   constructor(userAgent: string) {
     this.userAgent = userAgent;
     this.session = axios.create({
@@ -18,6 +32,13 @@ export class WebVPNService {
     });
   }
 
+  /**
+   * 获取 WebVPN 会话
+   *
+   * @param idToken - 身份令牌
+   * @returns 配置好的 Axios 实例，可用于后续 WebVPN API 调用
+   * @throws {Error} 当会话获取失败时抛出错误
+   */
   async getWebVPNSession(idToken: string): Promise<AxiosInstance> {
     const response = await this.session.get('https://webvpn.xjtu.edu.cn/login?cas_login=true', {
       headers: {
@@ -55,6 +76,17 @@ export class WebVPNService {
     return this.session;
   }
 
+  /**
+   * 获取 WebVPN 票据
+   *
+   * @returns 包含 WebVPN 票据和时间的对象
+   * @throws {Error} 当未获取会话或票据过期时抛出错误
+   * @example
+   * ```typescript
+   * const ticketInfo = await webvpn.getTicket();
+   * console.log(`票据: ${ticketInfo.ticket}`);
+   * ```
+   */
   async getTicket(): Promise<WebVPNTicket> {
     if (!this.ticket || !this.ticketTime || Date.now() - this.ticketTime > 15 * 60 * 1000) {
       if (!this.idToken) {
@@ -69,6 +101,16 @@ export class WebVPNService {
     };
   }
 
+  /**
+   * 获取当前 WebVPN 会话实例
+   *
+   * @returns 当前配置的 Axios 实例
+   * @example
+   * ```typescript
+   * const session = webvpn.getSession();
+   * // 使用 session 进行自定义请求
+   * ```
+   */
   getSession(): AxiosInstance {
     return this.session;
   }

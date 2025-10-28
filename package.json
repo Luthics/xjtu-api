@@ -1,6 +1,6 @@
 {
   "name": "xjtu-api",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "description": "西安交通大学 API 封装库，提供统一身份认证、MFA 多因素认证、用户信息获取等功能",
   "type": "module",
   "main": "dist/index.js",
@@ -16,7 +16,8 @@
     "test": "bun test",
     "prepublishOnly": "bun run build",
     "lint": "eslint src tests --ext .ts",
-    "lint:fix": "eslint src tests --ext .ts --fix"
+    "lint:fix": "eslint src tests --ext .ts --fix",
+    "docs": "typedoc --out docs src/index.ts"
   },
   "keywords": [
     "xjtu",
@@ -51,6 +52,7 @@
     "@typescript-eslint/eslint-plugin": "^8.46.2",
     "@typescript-eslint/parser": "^8.46.2",
     "eslint": "^9.38.0",
+    "typedoc": "^0.28.14",
     "typescript": "^5.0.0"
   },
   "dependencies": {

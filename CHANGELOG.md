@@ -2,7 +2,24 @@
 
 本项目遵循 [语义化版本](https://semver.org/lang/zh-CN/)。
 
-## [1.0.0] - 2024-10-28
+## [0.1.0] - 2025-10-28
+
+### 新增
+- 支持多种登录方式
+  - 账号密码登录（原有方式）
+  - Token 登录（新增支持直接使用 idToken 和 refreshToken）
+- 新增 `TokenCredentials` 类型定义
+- 新增 `setTokens()` 方法用于动态设置 token
+- 新增 `getRefreshToken()` 方法
+- 改进 `getUserInfo()` 方法，支持在已有 token 的情况下直接使用
+
+### 技术特性
+- 向后兼容，原有 API 完全不受影响
+- 完整的 TypeScript 类型支持
+- 新增测试用例验证 token 登录功能
+- 更新文档说明多种登录方式的使用
+
+## [0.0.1] - 2024-10-28
 
 ### 新增
 - 初始版本发布
