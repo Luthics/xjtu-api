@@ -1,5 +1,5 @@
 import { describe, test, expect } from 'bun:test';
-import { XJTU } from './index.js';
+import { XJTU } from '../../src/index.js';
 
 describe('XJTU', () => {
   test('should create instance with credentials', () => {

@@ -15,8 +15,8 @@
     "build": "tsc",
     "test": "bun test",
     "prepublishOnly": "bun run build",
-    "lint": "eslint src --ext .ts",
-    "lint:fix": "eslint src --ext .ts --fix"
+    "lint": "eslint src tests --ext .ts",
+    "lint:fix": "eslint src tests --ext .ts --fix"
   },
   "keywords": [
     "xjtu",
