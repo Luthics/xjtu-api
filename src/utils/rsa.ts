@@ -9,7 +9,7 @@ let _pubkeyCache: string | null = null;
 
 function getPubkey(refresh: boolean = false): string {
   if (_pubkeyCache === null || refresh) {
-    const keyPath = join(__dirname, '../../ref/en/publicKey/token_1028.key');
+    const keyPath = join(__dirname, '../assets/keys/token_1028.key');
     _pubkeyCache = readFileSync(keyPath, 'utf-8');
   }
   return _pubkeyCache;
