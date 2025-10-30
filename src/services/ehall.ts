@@ -1,4 +1,5 @@
-import axios, { AxiosInstance } from 'axios';
+/* global URL, console */
+import axios, { AxiosInstance, AxiosResponse } from 'axios';
 import { ApiResponse } from '../types/core/index.js';
 import { Course, Score, ClassroomStatus } from '../types/api/ehall.xjtu.edu.cn/index.js';
 import { RollResponse, RollGroup } from '../types/api/ehall.xjtu.edu.cn/appMultiGroupEntranceList.js';
@@ -16,6 +17,8 @@ import { RollResponse, RollGroup } from '../types/api/ehall.xjtu.edu.cn/appMulti
 export class EHallService {
   private session: AxiosInstance;
   private userAgent: string;
+  private cookies: Record<string, string> = {};
+  public show302: boolean = false;
 
   /**
    * 创建 EHallService 实例
@@ -26,41 +29,117 @@ export class EHallService {
     this.userAgent = userAgent;
     this.session = axios.create({
       timeout: 10000,
+      withCredentials: true,
+      maxRedirects: 0,
       headers: {
         'User-Agent': this.userAgent,
       },
+      validateStatus: (status: number) => {
+        return status >= 200 && status < 400;
+      },
     });
+
+    // 添加请求拦截器处理 cookies
+    this.session.interceptors.request.use((config) => {
+      if (config.headers && Object.keys(this.cookies).length > 0) {
+        config.headers.Cookie = Object.keys(this.cookies).map((key) => `${key}=${this.cookies[key]}`).join("; ");
+      }
+      return config;
+    });
+
+    // 添加响应拦截器处理 cookies 和重定向
+    this.session.interceptors.response.use(
+      async (res: AxiosResponse) => {
+        if (res.headers["set-cookie"]) {
+          const cookies = Array.isArray(res.headers["set-cookie"])
+            ? res.headers["set-cookie"]
+            : [res.headers["set-cookie"]];
+          cookies.forEach((cookie: string) => {
+            const [key, value] = cookie.split(";")[0].split("=");
+            this.cookies[key] = value;
+          });
+        }
+        if (res.status === 302 && res.headers.location) {
+          let redirectUrl = res.headers.location;
+          // 处理相对路径URL
+          if (redirectUrl.startsWith('/')) {
+            const currentUrl = res.config.url || 'https://ehall.xjtu.edu.cn';
+            const baseUrl = new URL(currentUrl);
+            redirectUrl = `${baseUrl.protocol}//${baseUrl.host}${redirectUrl}`;
+          }
+          if (this.show302) {
+            // eslint-disable-next-line no-console
+            console.log(res.status, redirectUrl);
+          }
+          const redirectRes = await this.session.get(redirectUrl);
+          return redirectRes;
+        }
+        if (res.status === 301) {
+          // eslint-disable-next-line no-console
+          console.log(res.headers.location);
+        }
+        return res;
+      },
+      (error: unknown) => {
+        return Promise.reject(error);
+      }
+    );
+  }
+
+  /**
+   * 设置 cookies
+   *
+   * @param cookies - cookies 对象
+   */
+  public setCookies(cookies: Record<string, string>): void {
+    this.cookies = cookies;
+  }
+
+  /**
+   * 获取当前 cookies
+   *
+   * @returns 当前 cookies 对象
+   */
+  public getCookies(): Record<string, string> {
+    return this.cookies;
   }
 
   /**
    * 获取 EHall 会话
    *
    * @param idToken - 身份令牌
+   * @param appid - 应用 ID (可选)
    * @returns 配置好的 Axios 实例，可用于后续 EHall API 调用
    * @throws {Error} 当会话获取失败时抛出错误
    */
   async getEHallSession(idToken: string): Promise<AxiosInstance> {
-    const baseUrl = 'https://org.xjtu.edu.cn/openplatform/oauth/authorize';
-    const params = new URLSearchParams({
-      responseType: 'code',
-      scope: 'user_info',
-      appId: '1030',
-      state: 'da75aedb2910421aacdc54d479151197',
-      redirectUri: 'http://ehall.xjtu.edu.cn/amp-auth-adapter/loginSuccess',
-    });
-
-    const ehallUrl = `${baseUrl}?${params}`;
-
-    await this.session.get(ehallUrl, {
+    // 获取初始 cookies
+    const res = await this.session.get("https://ehall.xjtu.edu.cn/login?service=https://ehall.xjtu.edu.cn/new/index.html?browser=no", {
       headers: {
         'x-id-token': idToken,
+        'x-requested-with': 'com.supwisdom.xjtu',
         'accept-encoding': 'gzip',
       },
     });
-
+    // eslint-disable-next-line no-console
+    console.log("request url: ", res.config.url);
+    await this.session.get(res.config.url!, {
+      headers: {
+        'x-id-token': idToken,
+        'x-requested-with': 'com.supwisdom.xjtu',
+        'accept-encoding': 'gzip',
+      },
+    })
     return this.session;
   }
 
+  /**
+   * 获取应用的角色列表
+   *
+   * @param appId - 应用ID
+   * @returns 角色响应数据
+   * @private
+   */
   private async getRolls(appId: string): Promise<RollResponse> {
     const t = Date.now();
     const url = `https://ehall.xjtu.edu.cn/appMultiGroupEntranceList?r_t=${t}&appId=${appId}&param=`;
@@ -68,7 +147,16 @@ export class EHallService {
     return response.data;
   }
 
-  private async getTargetUrl(appId: string, keyword: string = '学生'): Promise<string> {
+  /**
+   * 获取目标URL
+   *
+   * @param appId - 应用ID
+   * @param keyword - 搜索关键词，默认为'移动应用学生'
+   * @returns 目标URL
+   * @throws {Error} 当未找到匹配的目标URL时抛出错误
+   * @private
+   */
+  private async getTargetUrl(appId: string, keyword: string = '移动应用学生'): Promise<string> {
     const rolls = await this.getRolls(appId);
     const groupList: RollGroup[] = rolls.data.groupList;
 
@@ -78,7 +166,7 @@ export class EHallService {
       }
     }
 
-    throw new Error(`未找到包含关键词"${keyword}"的目标URL`);
+    throw new Error(`未找到包含关键词"${keyword}"的目标URL，请检查应用ID是否正确`);
   }
 
   /**
@@ -97,21 +185,26 @@ export class EHallService {
   async getCourse(termCode: string): Promise<ApiResponse<Course[]>> {
     const appId = '4770397878132218';
     const targetUrl = await this.getTargetUrl(appId);
-    
+
     await this.session.get(targetUrl);
 
     try {
       const response = await this.session.post(
         'https://ehall.xjtu.edu.cn/jwapp/sys/wdkb/modules/xskcb/xskcb.do',
-        { XNXQDM: termCode }
+        { XNXQDM: termCode },
+        {
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8'
+          }
+        }
       );
-      
+
       const data = response.data;
-      
+
       if (data.code !== '0') {
         return {
           code: -1,
-          message: '获取课表失败',
+          message: `获取课表失败: ${data.message || '未知错误'}`,
         };
       }
 
@@ -140,7 +233,7 @@ export class EHallService {
     } catch (error) {
       return {
         code: -1,
-        message: `获取课表失败: ${error}`,
+        message: `获取课表失败: ${error instanceof Error ? error.message : String(error)}`,
       };
     }
   }
@@ -161,7 +254,7 @@ export class EHallService {
   async getScore(termCode: string): Promise<ApiResponse<Score[]>> {
     const appId = '4768574631264620';
     const targetUrl = await this.getTargetUrl(appId);
-    
+
     await this.session.get(targetUrl);
 
     const headers = {
@@ -190,7 +283,7 @@ export class EHallService {
       if (result.code !== '0') {
         return {
           code: -1,
-          message: '获取成绩失败',
+          message: `获取成绩失败: ${result.message || '未知错误'}`,
         };
       }
 
@@ -225,7 +318,7 @@ export class EHallService {
     } catch (error) {
       return {
         code: -1,
-        message: `获取成绩失败: ${error}`,
+        message: `获取成绩失败: ${error instanceof Error ? error.message : String(error)}`,
       };
     }
   }
@@ -247,7 +340,7 @@ export class EHallService {
   async getClassroomStatus(classroom: string, date: string): Promise<ApiResponse<ClassroomStatus[]>> {
     const appId = '4768402106681759';
     const targetUrl = await this.getTargetUrl(appId);
-    
+
     await this.session.get(targetUrl);
 
     const result: ClassroomStatus[] = [];
@@ -274,7 +367,7 @@ export class EHallService {
         if (res.datas?.cxkxjs?.extParams?.code === 1 && res.code === '0') {
           for (const message of res.datas.cxkxjs.rows) {
             let classroomName = message.JASMC;
-            
+
             // Handle different classroom naming conventions
             if (['1007', '1008', '2025', '2026', '2027', '2028', '2029', '2030', '2031', '2032', '2033'].includes(classroom)) {
               classroomName = message.JASMC.slice(4);
@@ -305,7 +398,7 @@ export class EHallService {
     } catch (error) {
       return {
         code: -1,
-        message: `获取教室状态失败: ${error}`,
+        message: `获取教室状态失败: ${error instanceof Error ? error.message : String(error)}`,
       };
     }
   }
